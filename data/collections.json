@@ -1,0 +1,26 @@
+[
+  {
+    "active": true,
+    "cover_image": "https://images.unsplash.com/photo-1512436991641-6745cdb1723f?auto=format&fit=crop&w=900&q=80",
+    "created_date": "2026-07-28T16:40:38.137622114+00:00",
+    "desc": "Ceremonial Banarasi, woven in gold.",
+    "description": "Ceremonial Banarasi, woven in gold.",
+    "display_order": 1,
+    "id": "col-1",
+    "name": "Bridal",
+    "slug": "bridal",
+    "updated_date": "2026-07-28T16:40:38.137630190+00:00"
+  },
+  {
+    "active": true,
+    "cover_image": "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=900&q=80",
+    "created_date": "2026-07-28T16:40:38.137635120+00:00",
+    "desc": "For the vows and the quiet moments between.",
+    "description": "For the vows and the quiet moments between.",
+    "display_order": 2,
+    "id": "col-2",
+    "name": "Wedding",
+    "slug": "wedding",
+    "updated_date": "2026-07-28T16:40:38.137636612+00:00"
+  }
+]

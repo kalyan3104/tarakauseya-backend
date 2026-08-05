@@ -1,0 +1,60 @@
+[
+  {
+    "active": true,
+    "blouse_included": true,
+    "border": "Zari",
+    "collection": "Bridal",
+    "colour": "Gold",
+    "cover_image": "https://images.unsplash.com/photo-1512436991641-6745cdb1723f?auto=format&fit=crop&w=900&q=80",
+    "created_date": "2026-07-28T16:40:38.134734401+00:00",
+    "description": "A luminous silk saree crafted for weddings.",
+    "discount_price": 165000,
+    "fabric": "Silk",
+    "featured": true,
+    "id": "prod-1",
+    "images": [
+      "https://images.unsplash.com/photo-1512436991641-6745cdb1723f?auto=format&fit=crop&w=900&q=80"
+    ],
+    "length": "5.5 m",
+    "name": "Aadira Silk Saree",
+    "new_arrival": true,
+    "occasion": "Bridal",
+    "pattern": "Traditional",
+    "price": 185000,
+    "short_description": "Luminous silk with heirloom bridal craftsmanship.",
+    "sku": "VK-001",
+    "slug": "aadira-silk-saree",
+    "trending": true,
+    "updated_date": "2026-07-28T16:40:38.134766054+00:00",
+    "weight": 780
+  },
+  {
+    "active": true,
+    "blouse_included": false,
+    "border": "Simple",
+    "collection": "Everyday",
+    "colour": "Ivory",
+    "cover_image": "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=900&q=80",
+    "created_date": "2026-07-28T16:40:38.134926858+00:00",
+    "description": "Breathable cotton wired for daily elegance.",
+    "discount_price": 85000,
+    "fabric": "Cotton",
+    "featured": false,
+    "id": "prod-2",
+    "images": [
+      "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=900&q=80"
+    ],
+    "length": "5.5 m",
+    "name": "Nivara Cotton Saree",
+    "new_arrival": false,
+    "occasion": "Everyday",
+    "pattern": "Minimal",
+    "price": 95000,
+    "short_description": "A finely woven cotton for everyday grace.",
+    "sku": "VK-002",
+    "slug": "nivara-cotton-saree",
+    "trending": false,
+    "updated_date": "2026-07-28T16:40:38.134932188+00:00",
+    "weight": 520
+  }
+]
