@@ -1,0 +1,6 @@
+.env
+uploads/
+tara-kauseya.db
+
+target/
+data/target/
