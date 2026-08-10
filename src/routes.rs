@@ -31,18 +31,9 @@ pub fn create_router(state: AppState) -> Router {
         .allow_headers([header::AUTHORIZATION, header::CONTENT_TYPE]);
     Router::new()
         .route("/api/health", get(health::check_health))
-        .route("/api/auth/register", post(auth::register))
-        .route("/api/auth/verify-otp", post(auth::verify_otp))
-        .route("/api/auth/resend-otp", post(auth::resend_otp))
-        .route("/api/auth/login", post(auth::login))
         .route("/api/auth/supabase-exchange", post(auth::supabase_exchange))
         .route("/api/auth/me", get(auth::me))
         .route("/api/auth/logout", post(auth::logout))
-        .route(
-            "/api/auth/reset-password-request",
-            post(auth::reset_password_request),
-        )
-        .route("/api/auth/reset-password", post(auth::reset_password))
         .route(
             "/api/entities/:entity",
             get(entities::list).post(entities::create),

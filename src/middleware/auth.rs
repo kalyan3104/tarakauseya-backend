@@ -11,17 +11,25 @@ use serde::{Deserialize, Serialize};
 pub struct Claims {
     pub sub: String,
     pub email: String,
+    pub phone: Option<String>,
     pub role: String,
     pub exp: usize,
 }
 pub struct AuthUser(pub Claims);
 
-pub fn issue_token(state: &AppState, id: &str, email: &str, role: &str) -> ApiResult<String> {
+pub fn issue_token(
+    state: &AppState,
+    id: &str,
+    email: &str,
+    phone: Option<&str>,
+    role: &str,
+) -> ApiResult<String> {
     encode(
         &Header::default(),
         &Claims {
             sub: id.into(),
             email: email.into(),
+            phone: phone.map(|value| value.into()),
             role: role.into(),
             exp: (Utc::now() + Duration::days(7)).timestamp() as usize,
         },

@@ -16,6 +16,12 @@ impl AppConfig {
     pub fn from_env() -> Result<Self, Box<dyn std::error::Error + Send + Sync>> {
         dotenvy::dotenv().ok();
         let root = env::current_dir()?;
+        if env::var("DATABASE_URL").is_err() {
+            let backend_env = root.join("Backend").join(".env");
+            if backend_env.exists() {
+                dotenvy::from_filename(backend_env).ok();
+            }
+        }
         let port: u16 = env::var("PORT")
             .unwrap_or_else(|_| "3000".to_string())
             .parse()?;
