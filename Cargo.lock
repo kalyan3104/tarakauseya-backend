@@ -1880,6 +1880,7 @@ dependencies = [
  "chrono",
  "dotenvy",
  "jsonwebtoken",
+ "rand_core",
  "serde",
  "serde_json",
  "sqlx",

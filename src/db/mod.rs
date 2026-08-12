@@ -5,7 +5,7 @@ use sqlx::{
     PgPool,
     postgres::{PgConnectOptions, PgPoolOptions},
 };
-use std::{path::Path, str::FromStr};
+use std::{path::Path, str::FromStr, time::Duration};
 
 fn pool_options(database_url: &str) -> Result<PgConnectOptions, sqlx::Error> {
     // The configured hosted database uses PgBouncer in transaction-pooling
@@ -18,12 +18,22 @@ pub async fn connect_and_migrate(
     config: &AppConfig,
 ) -> Result<PgPool, Box<dyn std::error::Error + Send + Sync>> {
     tokio::fs::create_dir_all(&config.uploads_dir).await?;
+
     let migration_pool = PgPoolOptions::new()
         .max_connections(1)
+        .acquire_timeout(Duration::from_secs(10))
         .connect_with(pool_options(&config.direct_database_url)?)
-        .await?;
+        .await
+        .map_err(|err| {
+            Box::new(std::io::Error::new(
+                std::io::ErrorKind::TimedOut,
+                format!("migration database connection failed for DIRECT_URL: {err}"),
+            )) as Box<dyn std::error::Error + Send + Sync>
+        })?;
+
     sqlx::migrate!("./migrations").run(&migration_pool).await?;
     migration_pool.close().await;
+
     // Supabase transaction poolers cannot safely retain SQLx prepared
     // statements between requests. Use the supplied direct URL when the
     // pooled URL explicitly identifies itself as PgBouncer.
@@ -32,10 +42,19 @@ pub async fn connect_and_migrate(
     } else {
         &config.database_url
     };
+
     let pool = PgPoolOptions::new()
         .max_connections(10)
+        .acquire_timeout(Duration::from_secs(10))
         .connect_with(pool_options(application_url)?)
-        .await?;
+        .await
+        .map_err(|err| {
+            Box::new(std::io::Error::new(
+                std::io::ErrorKind::TimedOut,
+                format!("database connection failed for application URL: {err}"),
+            )) as Box<dyn std::error::Error + Send + Sync>
+        })?;
+
     Ok(pool)
 }
 
