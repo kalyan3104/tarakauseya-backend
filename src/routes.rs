@@ -32,6 +32,8 @@ pub fn create_router(state: AppState) -> Router {
     Router::new()
         .route("/api/health", get(health::check_health))
         .route("/api/auth/supabase-exchange", post(auth::supabase_exchange))
+        .route("/api/auth/register", post(auth::register))
+        .route("/api/auth/login", post(auth::login))
         .route("/api/auth/me", get(auth::me))
         .route("/api/auth/logout", post(auth::logout))
         .route(
