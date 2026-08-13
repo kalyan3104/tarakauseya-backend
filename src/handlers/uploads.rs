@@ -32,8 +32,8 @@ pub async fn upload(
                 .collect::<String>()
         );
         let bytes = field.bytes().await.map_err(ApiError::internal)?;
-        if bytes.len() > 25 * 1024 * 1024 {
-            return Err(ApiError::bad_request("Files must be 25 MB or smaller"));
+        if bytes.len() > 20 * 1024 * 1024 {
+            return Err(ApiError::bad_request("Files must be 20 MB or smaller"));
         }
         let path = state.config.uploads_dir.join(&safe);
         let mut file = tokio::fs::File::create(path)

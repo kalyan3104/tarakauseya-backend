@@ -4,6 +4,7 @@ use crate::{
 };
 use axum::{
     Router,
+    extract::DefaultBodyLimit,
     http::{HeaderValue, Method, header},
     routing::{get, patch, post},
 };
@@ -52,7 +53,10 @@ pub fn create_router(state: AppState) -> Router {
             post(imports::bulk_import_products),
         )
         .nest_service("/uploads", ServeDir::new(state.config.uploads_dir.clone()))
-        .layer(RequestBodyLimitLayer::new(25 * 1024 * 1024))
+        // Axum applies a 2 MiB default to `Multipart` extractors. Disable that
+        // extractor-level cap and retain the explicit 20 MiB request limit.
+        .layer(DefaultBodyLimit::disable())
+        .layer(RequestBodyLimitLayer::new(20 * 1024 * 1024))
         .layer(CompressionLayer::new().gzip(true))
         .layer(TraceLayer::new_for_http())
         .layer(cors)
