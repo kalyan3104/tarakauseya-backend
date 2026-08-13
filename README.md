@@ -15,4 +15,17 @@ The server runs at `http://127.0.0.1:3000`, stores its SQLite database at `Backe
 The frontend should be started separately with `npm run dev` from `Frontend`. Its Vite proxy forwards `/api` and `/uploads` to port 3000.
 
 Authentication uses Argon2 password hashing and signed JWTs. Development verification uses code `000000`; configure transactional email delivery before public deployment.
+
+## Deploy on Render
+
+This repository includes `render.yaml`. Create (or update) the Render web
+service with these settings:
+
+- **Build command:** `cargo build --release --locked`
+- **Start command:** `./target/release/tara-kauseya-api`
+- **Health check path:** `/api/health`
+
+Set `DATABASE_URL`, `DIRECT_URL`, and `FRONTEND_ORIGIN` in Render's Environment
+page. `JWT_SECRET` must be a long random value. Render provides `PORT`; the app
+listens on `0.0.0.0` by default so its proxy can reach it.
 hi

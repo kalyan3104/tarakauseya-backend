@@ -18,3 +18,14 @@ tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["fmt", "env-filter"] }
 uuid = { version = "1", features = ["v4", "serde"] }
 rand_core = "0.6"
+
+# Render's free builders have a strict build-time limit. This API is I/O bound,
+# so the small runtime benefit of the default, fully optimized Rust release
+# profile is not worth making every clean deployment compile significantly
+# longer. These settings keep the binary production-ready while prioritising
+# reliable deployment builds.
+[profile.release]
+opt-level = 1
+codegen-units = 256
+debug = 0
+strip = "symbols"

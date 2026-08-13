@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: tarakauseya-backend
+    runtime: rust
+    plan: free
+    buildCommand: cargo build --release --locked
+    startCommand: ./target/release/tara-kauseya-api
+    healthCheckPath: /api/health
+    envVars:
+      - key: HOST
+        value: 0.0.0.0
+      - key: RUST_LOG
+        value: tara_kauseya_api=info,tower_http=info
+      - key: DATABASE_URL
+        sync: false
+      - key: DIRECT_URL
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: FRONTEND_ORIGIN
+        sync: false

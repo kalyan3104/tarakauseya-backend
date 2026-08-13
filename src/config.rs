@@ -28,7 +28,10 @@ impl AppConfig {
         Ok(Self {
             bind_address: format!(
                 "{}:{}",
-                env::var("HOST").unwrap_or_else(|_| "127.0.0.1".to_string()),
+                // A hosted web service must listen on every interface so that
+                // Render's proxy and health checks can reach it. Developers can
+                // still set HOST=127.0.0.1 in .env to restrict local access.
+                env::var("HOST").unwrap_or_else(|_| "0.0.0.0".to_string()),
                 port
             )
             .parse()?,
