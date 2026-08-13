@@ -4,15 +4,15 @@ use crate::{
     middleware::auth::{AuthUser, issue_token},
     models::auth::{AuthResponse, PublicUser},
 };
+use argon2::password_hash::{PasswordHash, SaltString};
+use argon2::{Argon2, PasswordHasher, PasswordVerifier};
 use axum::{Json, extract::State};
 use chrono::Utc;
+use jsonwebtoken::{DecodingKey, Validation, decode};
+use rand_core::OsRng;
+use serde::Deserialize;
 use sqlx::{PgPool, Row};
 use uuid::Uuid;
-use jsonwebtoken::{decode, DecodingKey, Validation};
-use serde::Deserialize;
-use argon2::{Argon2, PasswordHasher, PasswordVerifier};
-use argon2::password_hash::{SaltString, PasswordHash};
-use rand_core::OsRng;
 
 #[derive(Debug, Deserialize)]
 struct SupaClaims {
@@ -51,7 +51,10 @@ pub async fn supabase_exchange(
     .map_err(|_| ApiError::unauthorized("Invalid Supabase token"))?;
 
     let phone_claim = decoded.claims.phone.map(|value| value.trim().to_string());
-    let email_claim = decoded.claims.email.map(|value| value.trim().to_lowercase());
+    let email_claim = decoded
+        .claims
+        .email
+        .map(|value| value.trim().to_lowercase());
 
     let row_opt = if let Some(phone) = phone_claim.as_deref() {
         sqlx::query("SELECT id,email,phone,name,role,verified FROM users WHERE phone=$1")
@@ -108,8 +111,17 @@ pub async fn supabase_exchange(
         user_from_row(&row)?
     };
 
-    let token = issue_token(&state, &user.id, &user.email, user.phone.as_deref(), &user.role)?;
-    Ok(Json(AuthResponse { access_token: token, user }))
+    let token = issue_token(
+        &state,
+        &user.id,
+        &user.email,
+        user.phone.as_deref(),
+        &user.role,
+    )?;
+    Ok(Json(AuthResponse {
+        access_token: token,
+        user,
+    }))
 }
 
 pub async fn me(AuthUser(claims): AuthUser) -> Json<PublicUser> {
@@ -182,8 +194,17 @@ pub async fn register(
         .await
         .map_err(ApiError::internal)?;
     let user = user_from_row(&row)?;
-    let token = issue_token(&state, &user.id, &user.email, user.phone.as_deref(), &user.role)?;
-    Ok(Json(AuthResponse { access_token: token, user }))
+    let token = issue_token(
+        &state,
+        &user.id,
+        &user.email,
+        user.phone.as_deref(),
+        &user.role,
+    )?;
+    Ok(Json(AuthResponse {
+        access_token: token,
+        user,
+    }))
 }
 
 pub async fn login(
@@ -195,22 +216,34 @@ pub async fn login(
         return Err(ApiError::bad_request("email and password required"));
     }
 
-    let row_opt = sqlx::query("SELECT id,email,phone,name,role,verified,password_hash FROM users WHERE email=$1")
-        .bind(&email)
-        .fetch_optional(&state.pool)
-        .await
-        .map_err(ApiError::internal)?;
+    let row_opt = sqlx::query(
+        "SELECT id,email,phone,name,role,verified,password_hash FROM users WHERE email=$1",
+    )
+    .bind(&email)
+    .fetch_optional(&state.pool)
+    .await
+    .map_err(ApiError::internal)?;
 
     let row = row_opt.ok_or_else(|| ApiError::unauthorized("Invalid email or password"))?;
     let stored_hash: String = row.try_get("password_hash").map_err(ApiError::internal)?;
-    let parsed = PasswordHash::new(&stored_hash).map_err(|_| ApiError::unauthorized("Invalid credentials"))?;
+    let parsed = PasswordHash::new(&stored_hash)
+        .map_err(|_| ApiError::unauthorized("Invalid credentials"))?;
     Argon2::default()
         .verify_password(input.password.as_bytes(), &parsed)
         .map_err(|_| ApiError::unauthorized("Invalid email or password"))?;
 
     let user = user_from_row(&row)?;
-    let token = issue_token(&state, &user.id, &user.email, user.phone.as_deref(), &user.role)?;
-    Ok(Json(AuthResponse { access_token: token, user }))
+    let token = issue_token(
+        &state,
+        &user.id,
+        &user.email,
+        user.phone.as_deref(),
+        &user.role,
+    )?;
+    Ok(Json(AuthResponse {
+        access_token: token,
+        user,
+    }))
 }
 
 const DEV_ADMIN_EMAIL: &str = "kalyan12.4st@gmail.com";
@@ -218,9 +251,12 @@ const DEV_ADMIN_PASSWORD: &str = "Kalyan@8899";
 const DEV_ADMIN_PHONE: &str = "+919999999999";
 
 pub async fn seed_dev_admin(pool: &PgPool) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-    let existing: Option<String> = sqlx::query_scalar("SELECT id FROM users WHERE email=$1 OR phone=$2")
+    // Resolve the email first. A previous version used `email OR phone` in a
+    // single query; if those values belonged to two different records,
+    // PostgreSQL could return the phone record and the following UPDATE then
+    // attempted to assign an email already owned by the other record.
+    let existing_email: Option<String> = sqlx::query_scalar("SELECT id FROM users WHERE email=$1")
         .bind(DEV_ADMIN_EMAIL)
-        .bind(DEV_ADMIN_PHONE)
         .fetch_optional(pool)
         .await?;
 
@@ -231,24 +267,40 @@ pub async fn seed_dev_admin(pool: &PgPool) -> Result<(), Box<dyn std::error::Err
         .map_err(|_| "admin password hashing failed")?;
     let now = Utc::now().to_rfc3339();
 
-    if let Some(id) = existing {
-        sqlx::query("UPDATE users SET email=$2, password_hash=$3, phone=$4, name='Admin', role='admin', verified=1, updated_at=$5 WHERE id=$1")
+    if let Some(id) = existing_email {
+        // Do not rewrite the phone number here: it may legitimately belong to
+        // another user from an older development database.
+        sqlx::query("UPDATE users SET password_hash=$2, name='Admin', role='admin', verified=1, updated_at=$3 WHERE id=$1")
             .bind(id)
-            .bind(DEV_ADMIN_EMAIL)
             .bind(password_hash.to_string())
-            .bind(DEV_ADMIN_PHONE)
             .bind(&now)
             .execute(pool)
             .await?;
     } else {
-        sqlx::query("INSERT INTO users (id,email,password_hash,phone,name,role,verified,created_at,updated_at) VALUES ($1,$2,$3,$4,'Admin','admin',1,$5,$5)")
-            .bind(Uuid::new_v4().to_string())
-            .bind(DEV_ADMIN_EMAIL)
-            .bind(password_hash.to_string())
-            .bind(DEV_ADMIN_PHONE)
-            .bind(&now)
-            .execute(pool)
-            .await?;
+        let existing_phone: Option<String> =
+            sqlx::query_scalar("SELECT id FROM users WHERE phone=$1")
+                .bind(DEV_ADMIN_PHONE)
+                .fetch_optional(pool)
+                .await?;
+
+        if let Some(id) = existing_phone {
+            sqlx::query("UPDATE users SET email=$2, password_hash=$3, name='Admin', role='admin', verified=1, updated_at=$4 WHERE id=$1")
+                .bind(id)
+                .bind(DEV_ADMIN_EMAIL)
+                .bind(password_hash.to_string())
+                .bind(&now)
+                .execute(pool)
+                .await?;
+        } else {
+            sqlx::query("INSERT INTO users (id,email,password_hash,phone,name,role,verified,created_at,updated_at) VALUES ($1,$2,$3,$4,'Admin','admin',1,$5,$5)")
+                .bind(Uuid::new_v4().to_string())
+                .bind(DEV_ADMIN_EMAIL)
+                .bind(password_hash.to_string())
+                .bind(DEV_ADMIN_PHONE)
+                .bind(&now)
+                .execute(pool)
+                .await?;
+        }
     }
     Ok(())
 }
