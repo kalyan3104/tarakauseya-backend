@@ -18,6 +18,7 @@ tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["fmt", "env-filter"] }
 uuid = { version = "1", features = ["v4", "serde"] }
 rand_core = "0.6"
+reqwest = { version = "0.12", default-features = false, features = ["rustls-tls"] }
 
 # Render's free builders have a strict build-time limit. This API is I/O bound,
 # so the small runtime benefit of the default, fully optimized Rust release

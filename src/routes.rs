@@ -56,7 +56,8 @@ pub fn create_router(state: AppState) -> Router {
         // Axum applies a 2 MiB default to `Multipart` extractors. Disable that
         // extractor-level cap and retain the explicit 20 MiB request limit.
         .layer(DefaultBodyLimit::disable())
-        .layer(RequestBodyLimitLayer::new(20 * 1024 * 1024))
+        // Reserve room for multipart headers so a 20 MiB file is accepted.
+        .layer(RequestBodyLimitLayer::new(21 * 1024 * 1024))
         .layer(CompressionLayer::new().gzip(true))
         .layer(TraceLayer::new_for_http())
         .layer(cors)

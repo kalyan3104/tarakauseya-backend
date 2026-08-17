@@ -6,10 +6,18 @@ pub struct AppConfig {
     pub database_url: String,
     pub direct_database_url: String,
     pub jwt_secret: String,
-        pub supabase_jwt_secret: Option<String>,
+    pub supabase_jwt_secret: Option<String>,
+    pub supabase_storage: Option<SupabaseStorageConfig>,
     pub uploads_dir: PathBuf,
     pub seed_data_dir: PathBuf,
     pub frontend_origin: String,
+}
+
+#[derive(Clone)]
+pub struct SupabaseStorageConfig {
+    pub url: String,
+    pub service_role_key: String,
+    pub bucket: String,
 }
 
 impl AppConfig {
@@ -25,6 +33,19 @@ impl AppConfig {
         let port: u16 = env::var("PORT")
             .unwrap_or_else(|_| "3000".to_string())
             .parse()?;
+        let supabase_url = env::var("SUPABASE_URL").ok();
+        let supabase_service_role_key = env::var("SUPABASE_SERVICE_ROLE_KEY").ok();
+        let supabase_storage = match (supabase_url, supabase_service_role_key) {
+            (Some(url), Some(service_role_key)) => Some(SupabaseStorageConfig {
+                url: url.trim_end_matches('/').to_string(),
+                service_role_key,
+                bucket: env::var("SUPABASE_STORAGE_BUCKET")
+                    .unwrap_or_else(|_| "product-images".to_string()),
+            }),
+            (None, None) => None,
+            _ => return Err("SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be set together".into()),
+        };
+
         Ok(Self {
             bind_address: format!(
                 "{}:{}",
@@ -43,6 +64,7 @@ impl AppConfig {
                 "change-this-local-development-secret-before-production".to_string()
             }),
             supabase_jwt_secret: env::var("SUPABASE_JWT_SECRET").ok(),
+            supabase_storage,
             uploads_dir: PathBuf::from(
                 env::var("UPLOADS_DIR")
                     .unwrap_or_else(|_| root.join("uploads").display().to_string()),
