@@ -41,7 +41,10 @@ pub async fn upload(
             return Err(ApiError::bad_request("Files must be 20 MB or smaller"));
         }
         let file_url = if let Some(storage) = &state.config.supabase_storage {
-            let upload_url = format!("{}/storage/v1/object/{}/{}", storage.url, storage.bucket, safe);
+            let upload_url = format!(
+                "{}/storage/v1/object/{}/{}",
+                storage.url, storage.bucket, safe
+            );
             let response = reqwest::Client::new()
                 .put(upload_url)
                 .header("apikey", &storage.service_role_key)
@@ -63,6 +66,14 @@ pub async fn upload(
                 "{}/storage/v1/object/public/{}/{}",
                 storage.url, storage.bucket, safe
             )
+        } else if state.config.production {
+            // Render's local filesystem is replaced whenever the service is
+            // restarted or redeployed. Never report a successful production
+            // upload when the file would disappear later.
+            return Err(ApiError::internal(
+                "Durable file storage is not configured. Set SUPABASE_URL and \
+                 SUPABASE_SERVICE_ROLE_KEY before uploading images.",
+            ));
         } else {
             let path = state.config.uploads_dir.join(&safe);
             let mut file = tokio::fs::File::create(path)

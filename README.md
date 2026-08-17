@@ -28,4 +28,19 @@ service with these settings:
 Set `DATABASE_URL`, `DIRECT_URL`, and `FRONTEND_ORIGIN` in Render's Environment
 page. `JWT_SECRET` must be a long random value. Render provides `PORT`; the app
 listens on `0.0.0.0` by default so its proxy can reach it.
+
+### Product image storage
+
+The Render filesystem is temporary, so it must not be used for product images
+in production. Create a **public** Supabase Storage bucket named
+`product-images`, then set these Render environment variables from the same
+Supabase project:
+
+- `SUPABASE_URL`
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `SUPABASE_STORAGE_BUCKET=product-images`
+
+Production uploads are limited to 20 MB each. The API refuses uploads when
+durable storage is not configured, rather than returning an image URL that will
+break after a Render restart or deploy.
 hi

@@ -11,6 +11,8 @@ services:
         value: 0.0.0.0
       - key: RUST_LOG
         value: tara_kauseya_api=info,tower_http=info
+      - key: APP_ENV
+        value: production
       - key: DATABASE_URL
         sync: false
       - key: DIRECT_URL

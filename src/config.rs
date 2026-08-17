@@ -8,6 +8,7 @@ pub struct AppConfig {
     pub jwt_secret: String,
     pub supabase_jwt_secret: Option<String>,
     pub supabase_storage: Option<SupabaseStorageConfig>,
+    pub production: bool,
     pub uploads_dir: PathBuf,
     pub seed_data_dir: PathBuf,
     pub frontend_origin: String,
@@ -43,7 +44,11 @@ impl AppConfig {
                     .unwrap_or_else(|_| "product-images".to_string()),
             }),
             (None, None) => None,
-            _ => return Err("SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be set together".into()),
+            _ => {
+                return Err(
+                    "SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be set together".into(),
+                );
+            }
         };
 
         Ok(Self {
@@ -65,6 +70,9 @@ impl AppConfig {
             }),
             supabase_jwt_secret: env::var("SUPABASE_JWT_SECRET").ok(),
             supabase_storage,
+            production: env::var("APP_ENV")
+                .map(|value| value.eq_ignore_ascii_case("production"))
+                .unwrap_or(false),
             uploads_dir: PathBuf::from(
                 env::var("UPLOADS_DIR")
                     .unwrap_or_else(|_| root.join("uploads").display().to_string()),
